@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat</title>
+    </head>
+    <body>
+        <h1>Chat</h1>
+
+        <!-- autoplay attribute required to render past the first frame
+             of the media stream -->
+        <video id="localVideo" autoplay></video>
+        <video id="remoteVideo" autoplay></video>
+
+        <div>
+            <button id="startCallButton">Start Call</button>
+            <button id="endCallButton">End Call</button>
+        </div>
+
+         <!-- adapter.js readme: adapter.js is a shim to insulate apps from spec changes 
+         and prefix differences in WebRTC. The prefix differences are mostly gone these 
+         days but differences in behaviour between browsers remain -->
+        <script src="https://webrtc.github.io/adapter/adapter-9.0.2.js"></script>
+        <script src="main.js"></script>
+    </body>
+</html>
