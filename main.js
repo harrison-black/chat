@@ -8,8 +8,15 @@ const remoteMessageArea = document.getElementById('remoteMessage');
 const startCallButton = document.getElementById('startCallButton');
 const endCallButton = document.getElementById('endCallButton');
 const sendMessageButton = document.getElementById('sendMessageButton');
+let localPeerConnection = null;
 let localDataChannel = null;
-let localMediaStream = null;
+
+startCallButton.onclick = startCall;
+endCallButton.disabled = true; // Can't end call until you start it
+endCallButton.onclick = endCall;
+sendMessageButton.onclick = sendLocalMessage;
+
+startPeerConnection();
 
 
 async function startLocalVideo() {
@@ -22,8 +29,10 @@ async function startLocalVideo() {
         }
         
         // Ask user for permission and get stream to local webcam.
-        localMediaStream = await navigator.mediaDevices.getUserMedia(mediaStreamConstraints);
-        
+        const localMediaStream = await navigator.mediaDevices.getUserMedia(mediaStreamConstraints);
+
+        // Stream media stream to receiver
+        localMediaStream.getTracks().forEach(track => localPeerConnection.addTrack(track, localMediaStream));
         localVideo.srcObject = localMediaStream; // Render in-page video
     } catch(err) {
         console.error('Something went wrong start local video media stream')
@@ -34,7 +43,7 @@ function stopLocalVideo() {
     console.log('Stopping local video...');
 
     // Release camera + mic resources by stopping media stream tracks
-    localVideo.srcObject?.getTracks().forEach(track => track.stop());
+    localVideo.srcObject.getTracks().forEach(track => track.stop());
 }
 
 function receiveMediaStreamCallback(event) {
@@ -44,7 +53,7 @@ function receiveMediaStreamCallback(event) {
     remoteVideo.srcObject = event.streams[0];
 }
 
-async function findIceCandidates(event, otherPeerConnection) {
+async function addIceCandidates(event, otherPeerConnection) {
     // ICE networking technique to find best path to connect peers
     // Generally requires STUN server due to NATs
     // const peerConnection = event.target; // Can find RTCPeerConnection this way
@@ -63,12 +72,8 @@ async function findIceCandidates(event, otherPeerConnection) {
     }
 }
 
-async function exchangeMetadata(localPeerConnection, remotePeerConnection) {
+async function exchangeMediaMetadata(localPeerConnection, remotePeerConnection) {
     try {
-        // Upon ICE candidate being identified
-        localPeerConnection.onicecandidate = event => findIceCandidates(event, remotePeerConnection);
-        remotePeerConnection.onicecandidate = event => findIceCandidates(event, localPeerConnection);
-
         // Exchange media metadata between peers (resolution, codec etc)
         const offer = await localPeerConnection.createOffer();
         console.log(`Offer created ${offer.sdp}`);
@@ -86,7 +91,7 @@ async function exchangeMetadata(localPeerConnection, remotePeerConnection) {
     }
 }
 
-function receiveDataChannelValue(event) {
+function receiveDataChannelValueCallback(event) {
     console.log('Receiving local data channel...');
     const channel = event.channel;
 
@@ -95,26 +100,20 @@ function receiveDataChannelValue(event) {
 }
 
 
-async function startPeerConnection() {
+function startPeerConnection() {
     console.log('Starting peer->peer connection...');
-
-    await startLocalVideo(); // Pre-requisite before below logic
 
     const servers = null; // STUN/TURN server config
 
     // For SCTP (WebRTC data channel protocol), reliable and ordered delivery 
     // is true by default.
-    const localPeerConnection = new RTCPeerConnection(servers);
+    localPeerConnection = new RTCPeerConnection(servers);
     const remotePeerConnection = new RTCPeerConnection(servers);
     
     localPeerConnection.name = localPeerConnection.name ?? 'local peer conection';
     remotePeerConnection.name = remotePeerConnection.name ?? 'remote peer connection';
 
-    // Stream media stream to receiver
-    // Media stream must be attached before metadata exchange!
-    localMediaStream?.getTracks().forEach(
-        track => localPeerConnection.addTrack(track, localMediaStream)
-    );
+    // Below event functions are very IMPORTANT to have correct timing for WebRTC logic
 
     // Upon sender (local peer) adding tracks
     remotePeerConnection.ontrack = receiveMediaStreamCallback;
@@ -122,11 +121,15 @@ async function startPeerConnection() {
     // Create data channel for messaging.
     // Must be created before metadata exchange!
     localDataChannel = localPeerConnection.createDataChannel('message_channel');
-    remotePeerConnection.ondatachannel = receiveDataChannelValue; // Upon data being sent
+    remotePeerConnection.ondatachannel = receiveDataChannelValueCallback; // Upon data being sent
 
-    await exchangeMetadata(localPeerConnection, remotePeerConnection);
+    // Upon media metadata negotiation needed
+    localPeerConnection.onnegotiationneeded = () => exchangeMediaMetadata(localPeerConnection, remotePeerConnection);
 
-    sendMessageButton.disabled = false; // Messages on data channel can now be sent
+    // Upon ICE candidate being identified
+    localPeerConnection.onicecandidate = event => addIceCandidates(event, remotePeerConnection);
+    remotePeerConnection.onicecandidate = event => addIceCandidates(event, localPeerConnection);
+
     console.log('Peer->peer initiation steps invoked');
 }
 
@@ -136,8 +139,8 @@ async function startCall() {
     // Invert allowed actions
     startCallButton.disabled = true;
     endCallButton.disabled = false;
-    
-    await startPeerConnection();
+
+    await startLocalVideo();
 
     console.log('Call started');
 }
@@ -159,12 +162,7 @@ async function endCall() {
 }
 
 function sendLocalMessage() {
-    console.log('Sending message on local data channel...');
-    localDataChannel.send(localMessageArea.value);
+    const message = localMessageArea.value;
+    console.log(`Sending message "${message}" on local data channel...`);
+    localDataChannel.send(message);
 }
-
-startCallButton.onclick = startCall;
-endCallButton.disabled = true; // Can't end call until you start it
-endCallButton.onclick = endCall;
-sendMessageButton.disabled = true; // Dependent on starting call for peer connection...
-sendMessageButton.onclick = sendLocalMessage;
