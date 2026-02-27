@@ -10,6 +10,7 @@ const endCallButton = document.getElementById('endCallButton');
 const sendMessageButton = document.getElementById('sendMessageButton');
 let localPeerConnection = null;
 let localDataChannel = null;
+const ws = new WebSocket("ws://localhost:8000/ws")
 
 startCallButton.onclick = startCall;
 endCallButton.disabled = true; // Can't end call until you start it
@@ -165,4 +166,7 @@ function sendLocalMessage() {
     const message = localMessageArea.value;
     console.log(`Sending message "${message}" on local data channel...`);
     localDataChannel.send(message);
+
+    ws.send(message)
+    ws.onmessage = event => console.log(event.data)
 }
