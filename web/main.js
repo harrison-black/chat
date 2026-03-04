@@ -8,16 +8,22 @@ const remoteMessageArea = document.getElementById('remoteMessage');
 const startCallButton = document.getElementById('startCallButton');
 const endCallButton = document.getElementById('endCallButton');
 const sendMessageButton = document.getElementById('sendMessageButton');
-let localPeerConnection = null;
-let localDataChannel = null;
+const usernameElement = document.getElementById('username');
+let peerConnection = null;
+let dataChannel = null;
+
 const ws = new WebSocket("ws://localhost:8000/ws")
+const params = new URLSearchParams(window.location.search);
+const username = params.get('user');
+const remoteUsername = params.get('remote_user');
+usernameElement.innerText = username
 
 startCallButton.onclick = startCall;
 endCallButton.disabled = true; // Can't end call until you start it
 endCallButton.onclick = endCall;
 sendMessageButton.onclick = sendLocalMessage;
-
-startPeerConnection();
+ws.onopen = event => console.log('WebSocket connection is open')
+ws.onmessage = receiveWebSocketMessage;
 
 
 async function startLocalVideo() {
@@ -33,7 +39,7 @@ async function startLocalVideo() {
         const localMediaStream = await navigator.mediaDevices.getUserMedia(mediaStreamConstraints);
 
         // Stream media stream to receiver
-        localMediaStream.getTracks().forEach(track => localPeerConnection.addTrack(track, localMediaStream));
+        localMediaStream.getTracks().forEach(track => peerConnection.addTrack(track, localMediaStream));
         localVideo.srcObject = localMediaStream; // Render in-page video
     } catch(err) {
         console.error('Something went wrong start local video media stream')
@@ -47,53 +53,85 @@ function stopLocalVideo() {
     localVideo.srcObject.getTracks().forEach(track => track.stop());
 }
 
-function receiveMediaStreamCallback(event) {
-    console.log('Receiving local peer video...');
+function receiveMediaStream(event) {
+    console.log('Receiving remote peer video...');
 
     // Apply media stream to remove video
     remoteVideo.srcObject = event.streams[0];
 }
 
-async function addIceCandidates(event, otherPeerConnection) {
+function sendWebSocketMessage(objectToSend) {
+    try {
+        ws.send(JSON.stringify(objectToSend));
+    } catch(err) {
+        console.error('Error sending WebSocket message:', err);
+    }
+}
+
+async function receiveWebSocketMessage(event){
+    const receivedObject = JSON.parse(event.data);
+    const { status, candidate, offer, answer } = receivedObject;
+
+    // Remote peer sent ICE candidate, mediadata (offer or answer)
+    // Separate communications
+    if(status) {
+        console.log(`Peer connection status: ${status}`)
+
+        if(status === 'READY') { // Don't start process until both peers connected
+            initPeerConnection();
+        }
+    } else if(candidate) {
+        console.log(`Candidate received: ${JSON.stringify(candidate)}`);
+        await peerConnection.addIceCandidate(candidate);
+    } else if(offer) {
+        console.log(`Offer received: ${JSON.stringify(offer)}`);
+        await peerConnection.setRemoteDescription(offer);
+
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        sendWebSocketMessage({ answer });
+        console.log(`Replied with answer: ${JSON.stringify(answer)}`);
+    } else if(answer) {
+        console.log(`Answer received: ${JSON.stringify(answer)}`);
+        await peerConnection.setRemoteDescription(answer);
+    } else {
+        console.warn(`Received unhandled web socket message: ${JSON.stringify(receivedObject)}`)
+    }
+}
+
+async function sendIceCandidate(event) {
     // ICE networking technique to find best path to connect peers
     // Generally requires STUN server due to NATs
     // const peerConnection = event.target; // Can find RTCPeerConnection this way
     const iceCandidate = event.candidate;
 
-    console.log(`Attempting to add ICE candidate ${iceCandidate?.candidate} with address ${iceCandidate?.address} to ${otherPeerConnection.name}`);
+    console.log(`Sending ICE candidate ${iceCandidate?.candidate} with address ${iceCandidate?.address}`);
 
     if(iceCandidate) {
         try {
-            const rtcIceCandidate = new RTCIceCandidate(iceCandidate);
-            await otherPeerConnection.addIceCandidate(rtcIceCandidate);
-            console.log(`ICE candidate ${iceCandidate.candidate} added to ${otherPeerConnection.name}`);
+            const candidate = new RTCIceCandidate(iceCandidate);
+            sendWebSocketMessage({ candidate });
+            console.log(`ICE candidate ${iceCandidate.candidate} with address ${iceCandidate?.address} added`);
         } catch(err) {
-            console.error(`Error adding ICE candidate ${iceCandidate.candidate} to ${otherPeerConnection.name}`)
+            console.error(`Error sending ICE candidate ${iceCandidate.candidate} with address ${iceCandidate?.address}`, err);
         }
     }
 }
 
-async function exchangeMediaMetadata(localPeerConnection, remotePeerConnection) {
+async function createOffer() {
     try {
-        // Exchange media metadata between peers (resolution, codec etc)
-        const offer = await localPeerConnection.createOffer();
+        const offer = await peerConnection.createOffer();
         console.log(`Offer created ${offer.sdp}`);
 
-        await localPeerConnection.setLocalDescription(offer);
-        await remotePeerConnection.setRemoteDescription(offer);
-
-        const answer = await remotePeerConnection.createAnswer();
-        console.log(`Answer created ${answer.sdp}`);
-
-        await localPeerConnection.setRemoteDescription(answer);
-        await remotePeerConnection.setLocalDescription(answer);
+        await peerConnection.setLocalDescription(offer);
+        sendWebSocketMessage({ offer });
     } catch(err) {
         console.error('Something went wrong exchanging metadata', err);
     }
 }
 
-function receiveDataChannelValueCallback(event) {
-    console.log('Receiving local data channel...');
+function receiveRemoteDataChannel(event) {
+    console.log('Receiving remote data channel value');
     const channel = event.channel;
 
     // Upon message received from data channel assign to peer text area
@@ -101,37 +139,32 @@ function receiveDataChannelValueCallback(event) {
 }
 
 
-function startPeerConnection() {
-    console.log('Starting peer->peer connection...');
+function initPeerConnection() {
+    console.log('Starting peer -> peer connection...');
 
     const servers = null; // STUN/TURN server config
 
     // For SCTP (WebRTC data channel protocol), reliable and ordered delivery 
     // is true by default.
-    localPeerConnection = new RTCPeerConnection(servers);
-    const remotePeerConnection = new RTCPeerConnection(servers);
+    peerConnection = new RTCPeerConnection(servers);
+    // const remotePeerConnection = new RTCPeerConnection(servers);
     
-    localPeerConnection.name = localPeerConnection.name ?? 'local peer conection';
-    remotePeerConnection.name = remotePeerConnection.name ?? 'remote peer connection';
-
-    // Below event functions are very IMPORTANT to have correct timing for WebRTC logic
-
+    // Below event functions are IMPORTANT to have correct timing for WebRTC logic
     // Upon sender (local peer) adding tracks
-    remotePeerConnection.ontrack = receiveMediaStreamCallback;
+    peerConnection.ontrack = receiveMediaStream;
     
     // Create data channel for messaging.
-    // Must be created before metadata exchange!
-    localDataChannel = localPeerConnection.createDataChannel('message_channel');
-    remotePeerConnection.ondatachannel = receiveDataChannelValueCallback; // Upon data being sent
+    // Will invoke peer connection events if {peerConnection}.addTrack() hasn't been called yet
+    dataChannel = peerConnection.createDataChannel('message_data_channel');
+    peerConnection.ondatachannel = receiveRemoteDataChannel;
 
     // Upon media metadata negotiation needed
-    localPeerConnection.onnegotiationneeded = () => exchangeMediaMetadata(localPeerConnection, remotePeerConnection);
+    peerConnection.onnegotiationneeded = createOffer;
 
     // Upon ICE candidate being identified
-    localPeerConnection.onicecandidate = event => addIceCandidates(event, remotePeerConnection);
-    remotePeerConnection.onicecandidate = event => addIceCandidates(event, localPeerConnection);
+    peerConnection.onicecandidate = sendIceCandidate;
 
-    console.log('Peer->peer initiation steps invoked');
+    console.log('Peer -> peer initiation steps initialised');
 }
 
 async function startCall() {
@@ -165,8 +198,5 @@ async function endCall() {
 function sendLocalMessage() {
     const message = localMessageArea.value;
     console.log(`Sending message "${message}" on local data channel...`);
-    localDataChannel.send(message);
-
-    ws.send(message)
-    ws.onmessage = event => console.log(event.data)
+    dataChannel.send(message);
 }
