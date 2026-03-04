@@ -5,7 +5,6 @@
     </head>
     <body>
         <h1>Chat</h1>
-        <p>User: <span id="username"></span></p>
 
         <!-- autoplay attribute required to render past the first frame
              of the media stream -->
@@ -16,7 +15,10 @@
             id="localMessage"
             placeholder="Send a message..."
         ></textarea>
-        <textarea id="remoteMessage"></textarea>
+        <textarea 
+            id="remoteMessage"
+            disabled
+        ></textarea>
 
         <div>
             <button id="startCallButton">Start Call</button>

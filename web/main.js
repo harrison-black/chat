@@ -8,15 +8,9 @@ const remoteMessageArea = document.getElementById('remoteMessage');
 const startCallButton = document.getElementById('startCallButton');
 const endCallButton = document.getElementById('endCallButton');
 const sendMessageButton = document.getElementById('sendMessageButton');
-const usernameElement = document.getElementById('username');
 let peerConnection = null;
 let dataChannel = null;
-
 const ws = new WebSocket("ws://localhost:8000/ws")
-const params = new URLSearchParams(window.location.search);
-const username = params.get('user');
-const remoteUsername = params.get('remote_user');
-usernameElement.innerText = username
 
 startCallButton.onclick = startCall;
 endCallButton.disabled = true; // Can't end call until you start it
