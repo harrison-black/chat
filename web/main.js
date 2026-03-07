@@ -10,13 +10,14 @@ const endCallButton = document.getElementById('endCallButton');
 const sendMessageButton = document.getElementById('sendMessageButton');
 let peerConnection = null;
 let dataChannel = null;
-const ws = new WebSocket("ws://localhost:8000/ws")
+const pageDomain = window.location.hostname;
+const ws = new WebSocket(`ws://${pageDomain}:8000/ws`);
 
 startCallButton.onclick = startCall;
 endCallButton.disabled = true; // Can't end call until you start it
 endCallButton.onclick = endCall;
-sendMessageButton.onclick = sendLocalMessage;
-ws.onopen = event => console.log('WebSocket connection is open')
+sendMessageButton.onclick = sendDataChannelMessage;
+ws.onopen = event => console.log('WebSocket connection is open');
 ws.onmessage = receiveWebSocketMessage;
 
 
@@ -36,7 +37,7 @@ async function startLocalVideo() {
         localMediaStream.getTracks().forEach(track => peerConnection.addTrack(track, localMediaStream));
         localVideo.srcObject = localMediaStream; // Render in-page video
     } catch(err) {
-        console.error('Something went wrong start local video media stream')
+        console.error('Something went wrong start local video media stream:', err)
     }
 }
 
@@ -124,27 +125,37 @@ async function createOffer() {
     }
 }
 
-function receiveRemoteDataChannel(event) {
-    console.log('Receiving remote data channel value');
-    const channel = event.channel;
-
-    // Upon message received from data channel assign to peer text area
-    channel.onmessage = event => remoteMessageArea.value = event.data;
+function sendDataChannelMessage() {
+    const message = localMessageArea.value;
+    console.log(`Sending message "${message}" on data channel...`);
+    dataChannel.send(message);
 }
 
+function receiveRemoteDataChannel(event) {
+    const channel = event.channel;
+    channel.onopen = event => console.log('Received data channel is open');
+    
+    // Upon message received from data channel assign to peer text area
+    channel.onmessage = event => {
+        console.log(`Receiving remote data channel value: ${JSON.stringify(event.data)}`);
+        remoteMessageArea.value = event.data;
+    }
+}
 
 function initPeerConnection() {
     console.log('Starting peer -> peer connection...');
 
-    const servers = null; // STUN/TURN server config
+    const config = {
+        iceServers: [{urls: 'stun:stun.l.google.com'}] // STUN or TURN server config
+    }
 
     // For SCTP (WebRTC data channel protocol), reliable and ordered delivery 
     // is true by default.
-    peerConnection = new RTCPeerConnection(servers);
+    peerConnection = new RTCPeerConnection(config);
     // const remotePeerConnection = new RTCPeerConnection(servers);
     
     // Below event functions are IMPORTANT to have correct timing for WebRTC logic
-    // Upon sender (local peer) adding tracks
+    // Upon sender adding tracks
     peerConnection.ontrack = receiveMediaStream;
     
     // Create data channel for messaging.
@@ -187,10 +198,4 @@ async function endCall() {
     remoteVideo.srcObject = null;
 
     console.log('Call ended');
-}
-
-function sendLocalMessage() {
-    const message = localMessageArea.value;
-    console.log(`Sending message "${message}" on local data channel...`);
-    dataChannel.send(message);
 }
