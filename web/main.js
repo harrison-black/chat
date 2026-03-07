@@ -3,8 +3,8 @@
 // Global vars
 const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
-const localMessageArea = document.getElementById('localMessage');
-const remoteMessageArea = document.getElementById('remoteMessage');
+const localMessageArea = document.getElementById('messageInput');
+const remoteMessageArea = document.getElementById('messageOutput');
 const startCallButton = document.getElementById('startCallButton');
 const endCallButton = document.getElementById('endCallButton');
 const sendMessageButton = document.getElementById('sendMessageButton');
@@ -16,7 +16,12 @@ const ws = new WebSocket(`ws://${pageDomain}:8000/ws`);
 startCallButton.onclick = startCall;
 endCallButton.disabled = true; // Can't end call until you start it
 endCallButton.onclick = endCall;
-sendMessageButton.onclick = sendDataChannelMessage;
+sendMessageButton.onclick = event => {
+    const message = localMessageArea.value;
+    addMessageToPage(message);
+    sendDataChannelMessage(message);
+}
+
 ws.onopen = event => console.log('WebSocket connection is open');
 ws.onmessage = receiveWebSocketMessage;
 
@@ -125,8 +130,7 @@ async function createOffer() {
     }
 }
 
-function sendDataChannelMessage() {
-    const message = localMessageArea.value;
+function sendDataChannelMessage(message) {
     console.log(`Sending message "${message}" on data channel...`);
     dataChannel.send(message);
 }
@@ -137,9 +141,16 @@ function receiveRemoteDataChannel(event) {
     
     // Upon message received from data channel assign to peer text area
     channel.onmessage = event => {
-        console.log(`Receiving remote data channel value: ${JSON.stringify(event.data)}`);
-        remoteMessageArea.value = event.data;
+        const message = event.data;
+        console.log(`Receiving remote data channel value: ${JSON.stringify(message)}`);
+        addMessageToPage(message);
     }
+}
+
+function addMessageToPage(message) {
+    const childElement = document.createElement('li');
+    childElement.textContent = message;
+    remoteMessageArea.append(childElement);
 }
 
 function initPeerConnection() {
