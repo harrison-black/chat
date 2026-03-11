@@ -31,7 +31,7 @@ Written for Linux only currently but similar processes will exist on other opera
 ### Notes
 - Close virtual environment via `deactivate`.
 - To run the second peer on a seprate machine, the following restrictions occur:
-    - Second machine must be on same network unless you set up port forwarding on the router or deploy in an externally accessible location.
-    - Must run FastAPI in production mode so that it exposes the app on 0.0.0.0 (represents all IP addresses on machine) instead of localhost) via `fastapi run main.py`.
+    - Second machine must be on the same network unless you set up port forwarding on the router or deploy in an externally accessible location.
+    - Must run FastAPI in production mode so that it exposes the app on 0.0.0.0 (represents all IP addresses on machine) instead of localhost via `fastapi run main.py`.
     - Second machine can navigate to first machine's internal IP address instead of localhost e.g. see `wlo1` device via `ifconfig` command (may need installing, terminal will give package name/apt command).
     - Second machine cannot access (and therefore can't send) video as it requires access to the browser's MediaDevices API which is security sensitive (only allowed on localhost or secure contexts i.e. HTTPS).

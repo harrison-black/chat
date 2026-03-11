@@ -18,7 +18,7 @@ endCallButton.disabled = true; // Can't end call until you start it
 endCallButton.onclick = endCall;
 sendMessageButton.onclick = event => {
     const message = localMessageArea.value;
-    addMessageToPage(message);
+    addMessageToPage(message, true);
     sendDataChannelMessage(message);
 }
 
@@ -31,8 +31,12 @@ async function startLocalVideo() {
         console.log('Starting local video...');
         
         const mediaStreamConstraints = {
-            video: true, // Enable video
-            audio: true, // Enable mic
+            // Enable video with precise resolution and audio 
+            video: {
+                width: { exact: 1280 },
+                height: { exact: 720 }
+            }, 
+            audio: true,
         }
         
         // Ask user for permission and get stream to local webcam.
@@ -143,18 +147,19 @@ function receiveRemoteDataChannel(event) {
     channel.onmessage = event => {
         const message = event.data;
         console.log(`Receiving remote data channel value: ${JSON.stringify(message)}`);
-        addMessageToPage(message);
+        addMessageToPage(message, false);
     }
 }
 
-function addMessageToPage(message) {
+function addMessageToPage(message, isSender) {
     const childElement = document.createElement('li');
     childElement.textContent = message;
+    childElement.className = isSender? 'text-left ml-4' : 'text-right mr-4';
     remoteMessageArea.append(childElement);
 }
 
 function initPeerConnection() {
-    console.log('Starting peer -> peer connection...');
+    console.log('Initialising peer -> peer connection...');
 
     const config = {
         iceServers: [{urls: 'stun:stun.l.google.com'}] // STUN or TURN server config
@@ -169,8 +174,7 @@ function initPeerConnection() {
     // Upon sender adding tracks
     peerConnection.ontrack = receiveMediaStream;
     
-    // Create data channel for messaging.
-    // Will invoke peer connection events if {peerConnection}.addTrack() hasn't been called yet
+    // Create data channel for messaging and listen for received messages
     dataChannel = peerConnection.createDataChannel('message_data_channel');
     peerConnection.ondatachannel = receiveRemoteDataChannel;
 
@@ -180,7 +184,7 @@ function initPeerConnection() {
     // Upon ICE candidate being identified
     peerConnection.onicecandidate = sendIceCandidate;
 
-    console.log('Peer -> peer initiation steps initialised');
+    console.log('Peer -> peer connection initialised');
 }
 
 async function startCall() {
