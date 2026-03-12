@@ -152,10 +152,15 @@ function receiveRemoteDataChannel(event) {
 }
 
 function addMessageToPage(message, isSender) {
-    const childElement = document.createElement('li');
-    childElement.textContent = message;
-    childElement.className = isSender? 'text-left ml-4' : 'text-right mr-4';
-    remoteMessageArea.append(childElement);
+    const chatParentElement = document.createElement('div');
+    chatParentElement.className = `chat ${isSender? 'chat-start ml-2' : 'chat-end mr-2'}`;
+    
+    const chatChildElement = document.createElement('div');
+    chatChildElement.textContent = message;
+    chatChildElement.className = 'chat-bubble';
+
+    chatParentElement.append(chatChildElement);
+    remoteMessageArea.append(chatParentElement);
 }
 
 function initPeerConnection() {
