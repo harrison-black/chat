@@ -1,10 +1,11 @@
 'use strict';
 
 // Global vars
+const mediaContainer = document.getElementById('mediaContainer');
 const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
-const localMessageArea = document.getElementById('messageInput');
-const remoteMessageArea = document.getElementById('messageOutput');
+const messageInput = document.getElementById('messageInput');
+const messageOutput = document.getElementById('messageOutput');
 const startVideoButton = document.getElementById('startVideoButton');
 const endVideoButton = document.getElementById('endVideoButton');
 const sendMessageButton = document.getElementById('sendMessageButton');
@@ -14,10 +15,13 @@ let mediaStreamSenders = [];
 const pageDomain = window.location.hostname;
 const ws = new WebSocket(`ws://${pageDomain}:8000/ws`);
 
+// Set container height to video height set by aspect ratio
+mediaContainer.style.height = `${remoteVideo.clientHeight}px`;
+
 startVideoButton.onclick = transmitVideo;
 endVideoButton.onclick = endVideoTransmission;
 sendMessageButton.onclick = event => {
-    const message = localMessageArea.value;
+    const message = messageInput.value;
     addMessageToPage(message, true);
     sendDataChannelMessage(message);
 }
@@ -164,7 +168,7 @@ function addMessageToPage(message, isSender) {
     chatChildElement.className = 'chat-bubble';
 
     chatParentElement.append(chatChildElement);
-    remoteMessageArea.append(chatParentElement);
+    messageOutput.append(chatParentElement);
 }
 
 function initPeerConnection() {
