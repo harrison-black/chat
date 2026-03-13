@@ -169,6 +169,9 @@ function addMessageToPage(message, isSender) {
 
     chatParentElement.append(chatChildElement);
     messageOutput.append(chatParentElement);
+
+    // Auto scroll to latest message
+    messageOutput.scrollTop = messageOutput.scrollHeight;
 }
 
 function initPeerConnection() {
