@@ -5,17 +5,17 @@ const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 const localMessageArea = document.getElementById('messageInput');
 const remoteMessageArea = document.getElementById('messageOutput');
-const startCallButton = document.getElementById('startCallButton');
-const endCallButton = document.getElementById('endCallButton');
+const startVideoButton = document.getElementById('startVideoButton');
+const endVideoButton = document.getElementById('endVideoButton');
 const sendMessageButton = document.getElementById('sendMessageButton');
 let peerConnection = null;
 let dataChannel = null;
+let mediaStreamSenders = [];
 const pageDomain = window.location.hostname;
 const ws = new WebSocket(`ws://${pageDomain}:8000/ws`);
 
-startCallButton.onclick = startCall;
-endCallButton.disabled = true; // Can't end call until you start it
-endCallButton.onclick = endCall;
+startVideoButton.onclick = transmitVideo;
+endVideoButton.onclick = endVideoTransmission;
 sendMessageButton.onclick = event => {
     const message = localMessageArea.value;
     addMessageToPage(message, true);
@@ -28,7 +28,7 @@ ws.onmessage = receiveWebSocketMessage;
 
 async function startLocalVideo() {
     try {
-        console.log('Starting local video...');
+        console.log('Starting local video/media stream...');
         
         const mediaStreamConstraints = {
             // Enable video with precise resolution and audio 
@@ -40,28 +40,32 @@ async function startLocalVideo() {
         }
         
         // Ask user for permission and get stream to local webcam.
-        const localMediaStream = await navigator.mediaDevices.getUserMedia(mediaStreamConstraints);
-
-        // Stream media stream to receiver
-        localMediaStream.getTracks().forEach(track => peerConnection.addTrack(track, localMediaStream));
-        localVideo.srcObject = localMediaStream; // Render in-page video
+        return await navigator.mediaDevices.getUserMedia(mediaStreamConstraints);
     } catch(err) {
         console.error('Something went wrong start local video media stream:', err)
     }
+
+    return null;
 }
 
 function stopLocalVideo() {
-    console.log('Stopping local video...');
+    console.log('Stopping local video/media stream...');
 
     // Release camera + mic resources by stopping media stream tracks
     localVideo.srcObject.getTracks().forEach(track => track.stop());
+    localVideo.classList.add('hidden'); // Hide <video>
 }
 
 function receiveMediaStream(event) {
-    console.log('Receiving remote peer video...');
+    console.log('Receiving remote peer media stream...');
 
     // Apply media stream to remove video
-    remoteVideo.srcObject = event.streams[0];
+    const mediaStream = event.streams[0];
+    remoteVideo.srcObject = mediaStream;
+    mediaStream.onremovetrack = event => {
+        console.log('No longer receiving remote peer video/media stream');
+        remoteVideo.srcObject = null; // Remove video from page
+    }
 }
 
 function sendWebSocketMessage(objectToSend) {
@@ -192,30 +196,39 @@ function initPeerConnection() {
     console.log('Peer -> peer connection initialised');
 }
 
-async function startCall() {
+async function transmitVideo() {
     console.log('Starting call...');
 
     // Invert allowed actions
-    startCallButton.disabled = true;
-    endCallButton.disabled = false;
+    startVideoButton.disabled = true;
+    endVideoButton.disabled = false;
 
-    await startLocalVideo();
+    const mediaStream = await startLocalVideo();
+
+    // Stream media stream to receiver
+    mediaStream.getTracks().forEach(track => mediaStreamSenders.push(peerConnection.addTrack(track, mediaStream)));
+    localVideo.srcObject = mediaStream; // Render in-page video
+    localVideo.classList.remove('hidden'); // Display <video>
 
     console.log('Call started');
 }
 
-async function endCall() {
+async function endVideoTransmission() {
     console.log('Ending call...');
 
     // Invert allowed actions
-    startCallButton.disabled = false;
-    endCallButton.disabled = true;
+    startVideoButton.disabled = false;
+    endVideoButton.disabled = true;
 
     stopLocalVideo();
 
     // Remove video from page (will still show last frame after stopLocalVideo())
     localVideo.srcObject = null;
     remoteVideo.srcObject = null;
+
+    // So remote peer will receive MediaStream.removetrack event
+    mediaStreamSenders.forEach(sender => peerConnection.removeTrack(sender));
+    mediaStreamSenders = [];
 
     console.log('Call ended');
 }
