@@ -2,10 +2,12 @@
 
 // Global vars
 const mediaContainer = document.getElementById('mediaContainer');
+const mediaContainerIcon = mediaContainer.querySelector('img');
 const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 const messageInput = document.getElementById('messageInput');
 const messageOutput = document.getElementById('messageOutput');
+const messageOutputIcon = messageOutput.querySelector('img');
 const videoButton = document.getElementById('videoButton');
 const videoIcon = videoButton.querySelector('img');
 const sendMessageButton = document.getElementById('sendMessageButton');
@@ -27,14 +29,16 @@ ws.onmessage = receiveWebSocketMessage;
 mediaContainer.style.height = `${remoteVideo.clientHeight}px`;
 
 videoButton.onclick = async event => {
-    if(isVideoOn) {
+    if(isVideoOn) { // End video related logic
         isVideoOn = false;
+        mediaContainerIcon.classList.remove('hidden');
         videoIcon.src = 'videocam_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
         await endVideoTransmission();
-    } else { // Video off
+    } else { // Video off, start video related logic
         isVideoOn = true;
         videoIcon.src = 'videocam_off_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
         await transmitVideo();
+        mediaContainerIcon.classList.add('hidden');
     }
     
 }
@@ -87,13 +91,21 @@ function stopLocalVideo() {
 
 function receiveMediaStream(event) {
     console.log('Receiving remote peer media stream...');
+    mediaContainerIcon.classList.add('hidden');
 
-    // Apply media stream to remove video
+    // Apply media stream to page
     const mediaStream = event.streams[0];
     remoteVideo.srcObject = mediaStream;
+
     mediaStream.onremovetrack = event => {
         console.log('No longer receiving remote peer video/media stream');
         remoteVideo.srcObject = null; // Remove video from page
+
+        if(isVideoOn) {
+            mediaContainerIcon.classList.add('hidden');
+        } else { // Video off
+            mediaContainerIcon.classList.remove('hidden');
+        }
     }
 }
 
@@ -190,6 +202,7 @@ function sendMessage(message) {
 }
 
 function addMessageToPage(message, isSender) {
+    messageOutputIcon.classList.add('hidden')
     const chatParentElement = document.createElement('div');
     chatParentElement.className = `chat m-1 ${isSender? 'chat-start' : 'chat-end'}`;
     
