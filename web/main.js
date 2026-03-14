@@ -56,32 +56,32 @@ videoButton.onclick = async event => {
     if(isVideoOn) { // End video related logic
         isVideoOn = false;
         mediaContainerIcon.classList.remove('hidden');
-        videoIcon.src = 'videocam_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
+        videoIcon.src = 'icon/videocam_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
         await endVideoTransmission();
     } else { // Video off, start video related logic
         isVideoOn = true;
-        videoIcon.src = 'videocam_off_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
+        videoIcon.src = 'icon/videocam_off_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
         await transmitVideo();
         mediaContainerIcon.classList.add('hidden');
     }
     
 }
-videoButton.onmouseenter = event => videoIcon.src = isVideoOn? 'videocam_off_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg' : 'videocam_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
-videoButton.onmouseleave = event => videoIcon.src = isVideoOn? 'videocam_off_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg' : 'videocam_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg';
+videoButton.onmouseenter = event => videoIcon.src = isVideoOn? 'icon/videocam_off_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg' : 'icon/videocam_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
+videoButton.onmouseleave = event => videoIcon.src = isVideoOn? 'icon/videocam_off_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg' : 'icon/videocam_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg';
 
 sendMessageButton.onclick = event => sendMessage(messageInput.value);
-sendMessageButton.onmouseenter = event => sendMessageIcon.src = 'send_60dp_B3E5A0_FILL0_wght100_GRAD0_opsz60.svg';
-sendMessageButton.onmouseleave = event => sendMessageIcon.src = 'send_60dp_999999_FILL0_wght100_GRAD0_opsz60.svg';
+sendMessageButton.onmouseenter = event => sendMessageIcon.src = 'icon/send_60dp_B3E5A0_FILL0_wght100_GRAD0_opsz60.svg';
+sendMessageButton.onmouseleave = event => sendMessageIcon.src = 'icon/send_60dp_999999_FILL0_wght100_GRAD0_opsz60.svg';
 
 clearMessageButton.onclick = event => {
     messageInput.value = '';
     clearMessageButton.classList.add('invisible');
 }
-clearMessageButton.onmouseenter = event => clearMessageIcon.src = 'cancel_32dp_B3E5A0_FILL0_wght100_GRAD0_opsz32.svg';
-clearMessageButton.onmouseleave = event => clearMessageIcon.src = 'cancel_32dp_999999_FILL0_wght100_GRAD0_opsz32.svg';
+clearMessageButton.onmouseenter = event => clearMessageIcon.src = 'icon/cancel_32dp_B3E5A0_FILL0_wght100_GRAD0_opsz32.svg';
+clearMessageButton.onmouseleave = event => clearMessageIcon.src = 'icon/cancel_32dp_999999_FILL0_wght100_GRAD0_opsz32.svg';
 
-heading.onmouseenter = event => headingIcon.src = 'chat_bubble_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
-heading.onmouseleave = event => headingIcon.src = 'chat_dashed_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg';
+heading.onmouseenter = event => headingIcon.src = 'icon/chat_bubble_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
+heading.onmouseleave = event => headingIcon.src = 'icon/chat_dashed_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg';
 
 
 function setContainerElementHeight() {
