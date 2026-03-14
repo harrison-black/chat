@@ -22,15 +22,20 @@ let peerConnection = null;
 let dataChannel = null;
 let mediaStreamSenders = [];
 let isVideoOn = false;
+let heightResizeTimeout = null;
 const pageDomain = window.location.hostname;
 const ws = new WebSocket(`ws://${pageDomain}:8000/ws`);
 
 ws.onopen = event => console.log('WebSocket connection is open');
 ws.onmessage = receiveWebSocketMessage;
 
-// Needs reapplying on window resize
 setContainerElementHeight();
-onresize = event => setTimeout(setContainerElementHeight, 250);
+
+// Needs reapplying on window resize. Set timeout to debounce changes for performance.
+window.onresize = event => {
+    window.clearTimeout(heightResizeTimeout);
+    heightResizeTimeout = window.setTimeout(setContainerElementHeight, 250);
+}
 
 messageInput.value = ''; // Reset message input on page load
 
@@ -81,7 +86,8 @@ heading.onmouseleave = event => headingIcon.src = 'chat_dashed_48dp_999999_FILL0
 
 function setContainerElementHeight() {
     // Set body height to apply background styling to entire visible page/viewport
-    body.style.height = `${window.innerHeight}px`;
+    const overflowY = body.scrollHeight - window.innerHeight;
+    body.style.height = `${overflowY > 0? body.scrollHeight : window.innerHeight}px`;
 
     // Set container height to video height set by aspect ratio. Height is required for styling e.g. overflow
     mediaContainer.style.height = `${remoteVideo.clientHeight}px`;
