@@ -41,10 +41,11 @@ videoButton.onclick = async event => {
 videoButton.onmouseenter = event => videoIcon.src = isVideoOn? 'videocam_off_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg' : 'videocam_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
 videoButton.onmouseleave = event => videoIcon.src = isVideoOn? 'videocam_off_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg' : 'videocam_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg';
 
-sendMessageButton.onclick = event => {
-    const message = messageInput.value;
-    addMessageToPage(message, true);
-    sendDataChannelMessage(message);
+sendMessageButton.onclick = event => sendMessage(messageInput.value);
+messageInput.onkeydown = event => {
+    if(event.key === 'Enter'){
+        sendMessage(messageInput.value);
+    }
 }
 
 sendMessageIcon.onmouseenter = event => sendMessageIcon.src = 'send_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
@@ -183,13 +184,18 @@ function receiveRemoteDataChannel(event) {
     }
 }
 
+function sendMessage(message) {
+    addMessageToPage(message, true);
+    sendDataChannelMessage(message);
+}
+
 function addMessageToPage(message, isSender) {
     const chatParentElement = document.createElement('div');
     chatParentElement.className = `chat m-1 ${isSender? 'chat-start' : 'chat-end'}`;
     
     const chatChildElement = document.createElement('div');
     chatChildElement.textContent = message;
-    chatChildElement.className = `chat-bubble ${isSender? 'bg-lime-500' : ''}`;
+    chatChildElement.className = `chat-bubble ${isSender? 'bg-lime-300' : ''}`;
 
     chatParentElement.append(chatChildElement);
     messageOutput.append(chatParentElement);
