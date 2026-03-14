@@ -6,28 +6,52 @@ const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 const messageInput = document.getElementById('messageInput');
 const messageOutput = document.getElementById('messageOutput');
-const startVideoButton = document.getElementById('startVideoButton');
-const endVideoButton = document.getElementById('endVideoButton');
+const videoButton = document.getElementById('videoButton');
+const videoIcon = videoButton.querySelector('img');
 const sendMessageButton = document.getElementById('sendMessageButton');
+const sendMessageIcon = sendMessageButton.querySelector('img');
+const heading = document.querySelector('h1');
+const headingIcon = heading.querySelector('img');
+
 let peerConnection = null;
 let dataChannel = null;
 let mediaStreamSenders = [];
+let isVideoOn = false;
 const pageDomain = window.location.hostname;
 const ws = new WebSocket(`ws://${pageDomain}:8000/ws`);
+
+ws.onopen = event => console.log('WebSocket connection is open');
+ws.onmessage = receiveWebSocketMessage;
 
 // Set container height to video height set by aspect ratio. Height is required for styling e.g. overflow
 mediaContainer.style.height = `${remoteVideo.clientHeight}px`;
 
-startVideoButton.onclick = transmitVideo;
-endVideoButton.onclick = endVideoTransmission;
+videoButton.onclick = async event => {
+    if(isVideoOn) {
+        isVideoOn = false;
+        videoIcon.src = 'videocam_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
+        await endVideoTransmission();
+    } else { // Video off
+        isVideoOn = true;
+        videoIcon.src = 'videocam_off_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
+        await transmitVideo();
+    }
+    
+}
+videoButton.onmouseenter = event => videoIcon.src = isVideoOn? 'videocam_off_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg' : 'videocam_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
+videoButton.onmouseleave = event => videoIcon.src = isVideoOn? 'videocam_off_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg' : 'videocam_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg';
+
 sendMessageButton.onclick = event => {
     const message = messageInput.value;
     addMessageToPage(message, true);
     sendDataChannelMessage(message);
 }
 
-ws.onopen = event => console.log('WebSocket connection is open');
-ws.onmessage = receiveWebSocketMessage;
+sendMessageIcon.onmouseenter = event => sendMessageIcon.src = 'send_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
+sendMessageIcon.onmouseleave = event => sendMessageIcon.src = 'send_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg';
+
+heading.onmouseenter = event => headingIcon.src = 'chat_bubble_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
+heading.onmouseleave = event => headingIcon.src = 'chat_dashed_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg';
 
 
 async function startLocalVideo() {
@@ -161,7 +185,7 @@ function receiveRemoteDataChannel(event) {
 
 function addMessageToPage(message, isSender) {
     const chatParentElement = document.createElement('div');
-    chatParentElement.className = `chat ${isSender? 'chat-start ml-2' : 'chat-end mr-2'}`;
+    chatParentElement.className = `chat m-1 ${isSender? 'chat-start' : 'chat-end'}`;
     
     const chatChildElement = document.createElement('div');
     chatChildElement.textContent = message;
@@ -206,10 +230,6 @@ function initPeerConnection() {
 async function transmitVideo() {
     console.log('Starting call...');
 
-    // Invert allowed actions
-    startVideoButton.disabled = true;
-    endVideoButton.disabled = false;
-
     const mediaStream = await startLocalVideo();
 
     // Stream media stream to receiver
@@ -222,10 +242,6 @@ async function transmitVideo() {
 
 async function endVideoTransmission() {
     console.log('Ending call...');
-
-    // Invert allowed actions
-    startVideoButton.disabled = false;
-    endVideoButton.disabled = true;
 
     stopLocalVideo();
 
