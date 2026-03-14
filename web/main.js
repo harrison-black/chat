@@ -15,7 +15,7 @@ let mediaStreamSenders = [];
 const pageDomain = window.location.hostname;
 const ws = new WebSocket(`ws://${pageDomain}:8000/ws`);
 
-// Set container height to video height set by aspect ratio
+// Set container height to video height set by aspect ratio. Height is required for styling e.g. overflow
 mediaContainer.style.height = `${remoteVideo.clientHeight}px`;
 
 startVideoButton.onclick = transmitVideo;
@@ -165,7 +165,7 @@ function addMessageToPage(message, isSender) {
     
     const chatChildElement = document.createElement('div');
     chatChildElement.textContent = message;
-    chatChildElement.className = 'chat-bubble';
+    chatChildElement.className = `chat-bubble ${isSender? 'bg-lime-500' : ''}`;
 
     chatParentElement.append(chatChildElement);
     messageOutput.append(chatParentElement);
