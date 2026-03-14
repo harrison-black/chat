@@ -22,7 +22,7 @@
         <div id="mediaContainer" class="flex gap-4 mb-4">
             <div class="bg-base-100 flex-none w-2/3 relative rounded-md">
                 <img 
-                    src="frame_person_430dp_EFEFEF_FILL0_wght100_GRAD0_opsz48.svg" 
+                    src="frame_person_430dp_EFEFEF_FILL0_wght100_GRAD0_opsz430.svg" 
                     alt="Video user placeholder" 
                     class="absolute top-1/2 left-1/2 -translate-1/2"
                 />
@@ -34,8 +34,8 @@
             </div>
             <div id="messageOutput" class="bg-base-100 rounded-md flex-none w-1/3 overflow-auto scroll-smooth relative">
                 <img 
-                    src="chat_dashed_350dp_EFEFEF_FILL0_wght100_GRAD0_opsz48.svg" 
-                    alt="Video user placeholder" 
+                    src="chat_dashed_350dp_EFEFEF_FILL0_wght100_GRAD0_opsz350.svg" 
+                    alt="User messages placeholder" 
                     class="absolute top-1/2 left-1/2 -translate-1/2"
                 />
             </div>
@@ -53,9 +53,12 @@
                     type="text"
                     placeholder="Write a message..."
                     class="input input-ghost outline-none w-full"
-                ></textarea>
-                <button id="sendMessageButton" class="btn btn-ghost border-none shadow-none bg-base-100">
-                    <img src="send_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg" alt="Send message"/>
+                />
+                <button id="clearMessageButton" class="px-1 invisible">
+                    <img src="cancel_32dp_999999_FILL0_wght100_GRAD0_opsz32.svg" alt="Clear message">
+                </button>
+                <button id="sendMessageButton" class="px-1">
+                    <img src="send_60dp_999999_FILL0_wght100_GRAD0_opsz60.svg" alt="Send message"/>
                 </button>
             </div>
         </div>

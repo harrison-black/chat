@@ -12,6 +12,8 @@ const videoButton = document.getElementById('videoButton');
 const videoIcon = videoButton.querySelector('img');
 const sendMessageButton = document.getElementById('sendMessageButton');
 const sendMessageIcon = sendMessageButton.querySelector('img');
+const clearMessageButton = document.getElementById('clearMessageButton');
+const clearMessageIcon = clearMessageButton.querySelector('img');
 const heading = document.querySelector('h1');
 const headingIcon = heading.querySelector('img');
 const body = document.querySelector('body');
@@ -29,6 +31,21 @@ ws.onmessage = receiveWebSocketMessage;
 // Needs reapplying on window resize
 setContainerElementHeight();
 onresize = event => setTimeout(setContainerElementHeight, 250);
+
+messageInput.value = ''; // Reset message input on page load
+
+messageInput.onkeydown = event => {
+    if(event.key === 'Enter'){
+        sendMessage(messageInput.value);
+    }
+
+    // Note messageInput.value's content doesn't reflect yet the current key being pressed
+    if(event.key === 'Backspace' && messageInput.value?.length <= 1) {
+        clearMessageButton.classList.add('invisible');
+    } else { // Message has been written
+        clearMessageButton.classList.remove('invisible');
+    }
+}
 
 videoButton.onclick = async event => {
     if(isVideoOn) { // End video related logic
@@ -48,14 +65,15 @@ videoButton.onmouseenter = event => videoIcon.src = isVideoOn? 'videocam_off_48d
 videoButton.onmouseleave = event => videoIcon.src = isVideoOn? 'videocam_off_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg' : 'videocam_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg';
 
 sendMessageButton.onclick = event => sendMessage(messageInput.value);
-messageInput.onkeydown = event => {
-    if(event.key === 'Enter'){
-        sendMessage(messageInput.value);
-    }
-}
+sendMessageButton.onmouseenter = event => sendMessageIcon.src = 'send_60dp_B3E5A0_FILL0_wght100_GRAD0_opsz60.svg';
+sendMessageButton.onmouseleave = event => sendMessageIcon.src = 'send_60dp_999999_FILL0_wght100_GRAD0_opsz60.svg';
 
-sendMessageIcon.onmouseenter = event => sendMessageIcon.src = 'send_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
-sendMessageIcon.onmouseleave = event => sendMessageIcon.src = 'send_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg';
+clearMessageButton.onclick = event => {
+    messageInput.value = '';
+    clearMessageButton.classList.add('invisible');
+}
+clearMessageButton.onmouseenter = event => clearMessageIcon.src = 'cancel_32dp_B3E5A0_FILL0_wght100_GRAD0_opsz32.svg';
+clearMessageButton.onmouseleave = event => clearMessageIcon.src = 'cancel_32dp_999999_FILL0_wght100_GRAD0_opsz32.svg';
 
 heading.onmouseenter = event => headingIcon.src = 'chat_bubble_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
 heading.onmouseleave = event => headingIcon.src = 'chat_dashed_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg';
