@@ -29,12 +29,16 @@ const ws = new WebSocket(`ws://${pageDomain}:8000/ws`);
 ws.onopen = event => console.log('WebSocket connection is open');
 ws.onmessage = receiveWebSocketMessage;
 
-setContainerElementHeight();
+adjustContainerElementHeight();
+adjustMediaContainerIcon();
 
-// Needs reapplying on window resize. Set timeout to debounce changes for performance.
+// Needs reapplying on window resize
 window.onresize = event => {
+    //Set timeout to debounce changes for performance.
     window.clearTimeout(heightResizeTimeout);
-    heightResizeTimeout = window.setTimeout(setContainerElementHeight, 250);
+    heightResizeTimeout = window.setTimeout(adjustContainerElementHeight, 250);
+
+    adjustMediaContainerIcon();
 }
 
 messageInput.value = ''; // Reset message input on page load
@@ -84,13 +88,23 @@ heading.onmouseenter = event => headingIcon.src = 'icon/chat_bubble_48dp_B3E5A0_
 heading.onmouseleave = event => headingIcon.src = 'icon/chat_dashed_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg';
 
 
-function setContainerElementHeight() {
+function adjustContainerElementHeight() {
     // Set body height to apply background styling to entire visible page/viewport
     const overflowY = body.scrollHeight - window.innerHeight;
     body.style.height = `${overflowY > 0? body.scrollHeight : window.innerHeight}px`;
 
     // Set container height to video height set by aspect ratio. Height is required for styling e.g. overflow
     mediaContainer.style.height = `${remoteVideo.clientHeight}px`;
+
+    
+}
+
+function adjustMediaContainerIcon() {
+    if(window.innerWidth < 1000) {
+        mediaContainerIcon.src = 'icon/frame_person_300dp_EFEFEF_FILL0_wght100_GRAD0_opsz300.svg';
+    } else {
+        mediaContainerIcon.src = 'icon/frame_person_430dp_EFEFEF_FILL0_wght100_GRAD0_opsz430.svg';
+    }
 }
 
 async function startLocalVideo() {

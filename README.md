@@ -5,15 +5,23 @@ A WebRTC based app for video/audio and messaging.
 ## Components
 
 ### API
-Provides peer awareness and signaling capability required to set up WebRTC communication. This is a Python FastAPI API. Currently only provides
-WebSocke endpoint and serves static files.
+Provides peer awareness and signaling capability required to set up WebRTC communication. Currently only provides
+WebSocket endpoint and serves static files.
 
 ### UI
-Provides interface for user and uses native web/browser APIs for WebRTC and Web Socket capabilities. Currently HTML and vanilla JS.
+Provides interface for user and uses native web/browser APIs for WebRTC and Web Socket capabilities.
 
+## Tech Stack
+- Python
+- FastAPI
+- HTML
+- TailwindCSS (currently no stylesheets of my own)
+- DaisyUI
+- Vanilla JS
+- Google Font and Icons
 
 ## Run Steps
-Written for Linux only currently but similar processes will exist on other operating systems.
+Written for Linux only currently and no Docker image yet...
 
 ### Setup:
 1. Clone this repo to your machine.
@@ -30,8 +38,9 @@ Written for Linux only currently but similar processes will exist on other opera
 
 ### Notes
 - Close virtual environment via `deactivate`.
-- To run the second peer on a seprate machine, the following restrictions occur:
+- To run the second peer on a seprate machine, the following restrictions exist at this time:
     - Second machine must be on the same network unless you set up port forwarding on the router or deploy in an externally accessible location.
     - Must run FastAPI in production mode so that it exposes the app on 0.0.0.0 (represents all IP addresses on machine) instead of localhost via `fastapi run main.py`.
     - Second machine can navigate to first machine's internal IP address instead of localhost e.g. see `wlo1` device via `ifconfig` command (may need installing, terminal will give package name/apt command).
     - Second machine cannot access (and therefore can't send) video as it requires access to the browser's MediaDevices API which is security sensitive (only allowed on localhost or secure contexts i.e. HTTPS).
+- Only two peers supported, adding a third may break things...
