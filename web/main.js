@@ -14,6 +14,7 @@ const sendMessageButton = document.getElementById('sendMessageButton');
 const sendMessageIcon = sendMessageButton.querySelector('img');
 const heading = document.querySelector('h1');
 const headingIcon = heading.querySelector('img');
+const body = document.querySelector('body');
 
 let peerConnection = null;
 let dataChannel = null;
@@ -25,8 +26,9 @@ const ws = new WebSocket(`ws://${pageDomain}:8000/ws`);
 ws.onopen = event => console.log('WebSocket connection is open');
 ws.onmessage = receiveWebSocketMessage;
 
-// Set container height to video height set by aspect ratio. Height is required for styling e.g. overflow
-mediaContainer.style.height = `${remoteVideo.clientHeight}px`;
+// Needs reapplying on window resize
+setContainerElementHeight();
+onresize = event => setTimeout(setContainerElementHeight, 250);
 
 videoButton.onclick = async event => {
     if(isVideoOn) { // End video related logic
@@ -58,6 +60,14 @@ sendMessageIcon.onmouseleave = event => sendMessageIcon.src = 'send_48dp_999999_
 heading.onmouseenter = event => headingIcon.src = 'chat_bubble_48dp_B3E5A0_FILL0_wght100_GRAD0_opsz48.svg';
 heading.onmouseleave = event => headingIcon.src = 'chat_dashed_48dp_999999_FILL0_wght100_GRAD0_opsz48.svg';
 
+
+function setContainerElementHeight() {
+    // Set body height to apply background styling to entire visible page/viewport
+    body.style.height = `${window.innerHeight}px`;
+
+    // Set container height to video height set by aspect ratio. Height is required for styling e.g. overflow
+    mediaContainer.style.height = `${remoteVideo.clientHeight}px`;
+}
 
 async function startLocalVideo() {
     try {
